@@ -1,0 +1,1647 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard PLORR — Program STM, KKBDA</title>
+
+  <!-- ECharts CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+
+  <style>
+    :root {
+      --blue-dark:   #1a3a6b;
+      --blue-mid:    #2563a8;
+      --blue-light:  #dbeafe;
+      --blue-accent: #3b82f6;
+      --green:       #16a34a;
+      --green-light: #dcfce7;
+      --red:         #dc2626;
+      --red-light:   #fee2e2;
+      --amber:       #d97706;
+      --amber-light: #fef3c7;
+      --grey:        #6b7280;
+      --grey-light:  #f3f4f6;
+      --white:       #ffffff;
+      --surface:     #f4f7fc;
+      --border:      #d1dff0;
+      --text:        #1e2d45;
+      --muted:       #6b7a99;
+      --radius:      8px;
+      --shadow:      0 2px 8px rgba(26,58,107,0.10);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, "Segoe UI", system-ui, sans-serif;
+      font-size: 14px;
+      line-height: 1.6;
+      background: var(--surface);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Header ── */
+    header {
+      background: var(--blue-dark);
+      color: var(--white);
+      padding: 16px 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+    }
+    .header-left h1 { font-size: 1.25rem; font-weight: 700; letter-spacing: 0.03em; }
+    .header-left p  { font-size: 0.8rem; opacity: 0.7; margin-top: 2px; }
+    .header-right { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    .header-badge {
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.3);
+      border-radius: 20px;
+      padding: 4px 14px;
+      font-size: 0.78rem;
+      font-weight: 600;
+    }
+    .btn-present {
+      background: #f59e0b;
+      color: #1e2d45;
+      border: none;
+      border-radius: 6px;
+      padding: 6px 16px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: 0.02em;
+    }
+    .btn-present:hover { background: #fbbf24; }
+
+    /* ── Nav Tabs ── */
+    nav.tabs {
+      background: var(--white);
+      border-bottom: 2px solid var(--border);
+      display: flex;
+      gap: 0;
+      overflow-x: auto;
+      padding: 0 20px;
+    }
+    .tab-btn {
+      background: none;
+      border: none;
+      border-bottom: 3px solid transparent;
+      padding: 12px 20px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--muted);
+      cursor: pointer;
+      white-space: nowrap;
+      transition: color 0.15s, border-color 0.15s;
+      margin-bottom: -2px;
+    }
+    .tab-btn:hover { color: var(--blue-mid); }
+    .tab-btn.active {
+      color: var(--blue-dark);
+      border-bottom-color: var(--blue-accent);
+    }
+
+    /* ── Layout ── */
+    main {
+      flex: 1;
+      max-width: 1140px;
+      width: 100%;
+      margin: 24px auto;
+      padding: 0 20px;
+    }
+    .page { display: none; }
+    .page.active { display: block; }
+
+    /* ── Section title ── */
+    .section-title {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+
+    /* ── Stat cards ── */
+    .cards-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 14px;
+      margin-bottom: 22px;
+    }
+    .card {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 16px 18px;
+      border-top: 4px solid var(--blue-mid);
+    }
+    .card.green  { border-top-color: var(--green); }
+    .card.red    { border-top-color: var(--red); }
+    .card.amber  { border-top-color: var(--amber); }
+    .card-label { font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+    .card-value { font-size: 2rem; font-weight: 700; color: var(--blue-dark); line-height: 1.15; margin-top: 2px; }
+    .card.green .card-value { color: var(--green); }
+    .card.red   .card-value { color: var(--red); }
+    .card.amber .card-value { color: var(--amber); }
+    .card-sub   { font-size: 0.78rem; color: var(--muted); margin-top: 2px; }
+
+    /* ── Panel / box ── */
+    .panel {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 20px 22px;
+      margin-bottom: 20px;
+    }
+    .panel h3 {
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: var(--blue-dark);
+      margin-bottom: 14px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+    }
+
+    /* ── Filters row ── */
+    .filters {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-bottom: 18px;
+      align-items: flex-end;
+    }
+    .filter-group { display: flex; flex-direction: column; gap: 4px; }
+    .filter-group label { font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
+    .filter-group select, .filter-group input {
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 7px 12px;
+      font-size: 0.83rem;
+      color: var(--text);
+      background: var(--white);
+      min-width: 150px;
+      outline: none;
+    }
+    .filter-group select:focus, .filter-group input:focus { border-color: var(--blue-accent); }
+
+    /* ── Chart container ── */
+    .chart-box { width: 100%; height: 320px; }
+    .chart-box-lg { width: 100%; height: 400px; }
+    .chart-box-sm { width: 100%; height: 280px; }
+    .chart-box-radar { width: 100%; height: 360px; }
+
+    /* ── Table ── */
+    .tbl-wrap { overflow-x: auto; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+    }
+    th {
+      background: var(--surface);
+      text-align: left;
+      padding: 9px 12px;
+      font-weight: 700;
+      color: var(--blue-dark);
+      border-bottom: 2px solid var(--border);
+      white-space: nowrap;
+    }
+    td {
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--grey-light);
+      vertical-align: middle;
+    }
+    tr:hover td { background: #f8faff; }
+
+    /* ── Status badges ── */
+    .badge {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 20px;
+      font-size: 0.73rem;
+      font-weight: 700;
+    }
+    .badge-capai   { background: var(--green-light); color: var(--green); }
+    .badge-tidak   { background: var(--red-light);   color: var(--red); }
+    .badge-tiada   { background: var(--grey-light);  color: var(--grey); }
+    .badge-semak   { background: var(--amber-light); color: var(--amber); }
+    .badge-disahkan { background: var(--green-light); color: var(--green); }
+    .badge-belum   { background: var(--amber-light); color: var(--amber); }
+
+    /* ── Progress bar ── */
+    .pbar-wrap { display: flex; align-items: center; gap: 8px; }
+    .pbar-track { flex: 1; background: var(--grey-light); border-radius: 99px; height: 8px; min-width: 60px; overflow: hidden; }
+    .pbar-fill  { height: 100%; border-radius: 99px; transition: width 0.4s; }
+    .pbar-fill.capai { background: var(--green); }
+    .pbar-fill.tidak { background: var(--red); }
+    .pbar-fill.tiada { background: var(--grey); }
+    .pbar-pct   { font-size: 0.78rem; font-weight: 700; min-width: 38px; text-align: right; }
+
+    /* ── KPI target line note ── */
+    .kpi-note {
+      font-size: 0.77rem;
+      color: var(--muted);
+      margin-top: 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .kpi-line-swatch {
+      display: inline-block;
+      width: 24px;
+      height: 3px;
+      background: repeating-linear-gradient(90deg,#d97706 0,#d97706 6px,transparent 6px,transparent 10px);
+      vertical-align: middle;
+    }
+
+    /* ── Alert / notice ── */
+    .notice {
+      background: var(--amber-light);
+      border: 1px solid #fcd34d;
+      border-radius: var(--radius);
+      padding: 10px 14px;
+      font-size: 0.8rem;
+      color: #92400e;
+      margin-bottom: 16px;
+    }
+    .notice-info {
+      background: var(--blue-light);
+      border-color: #93c5fd;
+      color: #1e40af;
+    }
+    .notice-ok {
+      background: var(--green-light);
+      border-color: #86efac;
+      color: #14532d;
+    }
+
+    /* ── CQI table ── */
+    .cqi-textarea {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 8px 10px;
+      font-size: 0.8rem;
+      font-family: inherit;
+      resize: vertical;
+      min-height: 56px;
+      outline: none;
+    }
+    .cqi-textarea:focus { border-color: var(--blue-accent); }
+
+    /* ── Verification section ── */
+    .verif-meta {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+    .verif-item { background: var(--surface); border-radius: var(--radius); padding: 12px 14px; }
+    .verif-item .vi-label { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
+    .verif-item .vi-value { font-size: 0.88rem; font-weight: 600; color: var(--text); margin-top: 2px; }
+
+    /* ── Individual student view ── */
+    .student-card-header {
+      display: flex;
+      gap: 18px;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      margin-bottom: 18px;
+      background: var(--blue-light);
+      border-radius: var(--radius);
+      padding: 16px 18px;
+    }
+    .student-card-header .sc-name { font-size: 1.05rem; font-weight: 700; color: var(--blue-dark); }
+    .student-card-header .sc-meta { font-size: 0.8rem; color: var(--muted); margin-top: 2px; }
+
+    /* ── Two-col layout ── */
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+    @media (max-width: 780px) { .two-col { grid-template-columns: 1fr; } }
+
+    /* ── Footer ── */
+    footer {
+      text-align: center;
+      font-size: 11px;
+      color: var(--muted);
+      border-top: 1px solid var(--border);
+      padding: 14px 20px;
+      background: var(--white);
+      margin-top: 28px;
+    }
+
+    /* ── Presentation mode overlay ── */
+    .present-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.55);
+      z-index: 900;
+      align-items: center;
+      justify-content: center;
+    }
+    .present-overlay.visible { display: flex; }
+    .present-box {
+      background: var(--white);
+      border-radius: 12px;
+      padding: 28px 32px;
+      max-width: 480px;
+      width: 90%;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.28);
+    }
+    .present-box h2 { font-size: 1rem; font-weight: 700; color: var(--blue-dark); margin-bottom: 10px; }
+    .present-box p  { font-size: 0.85rem; color: var(--muted); margin-bottom: 16px; }
+    .present-box .btn-row { display: flex; gap: 10px; justify-content: flex-end; }
+    .btn { border-radius: 6px; padding: 7px 18px; font-size: 0.83rem; font-weight: 700; cursor: pointer; border: none; }
+    .btn-primary { background: var(--blue-mid); color: var(--white); }
+    .btn-primary:hover { background: var(--blue-dark); }
+    .btn-ghost   { background: var(--grey-light); color: var(--text); }
+    .btn-ghost:hover { background: var(--border); }
+
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--blue-mid);
+      cursor: pointer;
+      margin-bottom: 14px;
+    }
+    .back-link:hover { text-decoration: underline; }
+
+    @media (max-width: 600px) {
+      header { padding: 12px 16px; }
+      .header-left h1 { font-size: 1rem; }
+      main { padding: 0 12px; margin: 14px auto; }
+      .tab-btn { padding: 10px 14px; font-size: 0.78rem; }
+    }
+
+    /* ── Print / Laporan Rasmi ── */
+    .btn-print {
+      background: #16a34a; color: #fff; border: none; border-radius: 6px;
+      padding: 9px 22px; font-size: 0.85rem; font-weight: 700; cursor: pointer;
+      display: inline-flex; align-items: center; gap: 8px; margin-top: 16px;
+    }
+    .btn-print:hover { background: #15803d; }
+
+    /* Print overlay (full-page hidden until triggered) */
+    #print-report {
+      display: none;
+      position: fixed; inset: 0; background: #fff; z-index: 9999;
+      overflow-y: auto; padding: 0;
+    }
+    #print-report.visible { display: block; }
+    .rpt-close {
+      position: fixed; top: 16px; right: 20px;
+      background: #dc2626; color: #fff; border: none; border-radius: 6px;
+      padding: 7px 18px; font-size: 0.82rem; font-weight: 700; cursor: pointer;
+      z-index: 10000;
+    }
+    .rpt-close:hover { background: #b91c1c; }
+    .rpt-print-btn {
+      position: fixed; top: 16px; right: 110px;
+      background: #1a3a6b; color: #fff; border: none; border-radius: 6px;
+      padding: 7px 18px; font-size: 0.82rem; font-weight: 700; cursor: pointer;
+      z-index: 10000;
+    }
+    .rpt-print-btn:hover { background: #2563a8; }
+
+    /* Report body styles */
+    .rpt-body {
+      max-width: 210mm;
+      margin: 0 auto;
+      padding: 20mm 18mm 24mm;
+      font-family: "Times New Roman", Times, serif;
+      font-size: 11pt;
+      line-height: 1.5;
+      color: #000;
+    }
+    .rpt-kop {
+      border-bottom: 3px solid #1a3a6b;
+      padding-bottom: 12px;
+      margin-bottom: 18px;
+      display: flex;
+      align-items: center;
+      gap: 18px;
+    }
+    .rpt-kop-logo {
+      width: 70px; height: 70px;
+      border: 2px solid #1a3a6b;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 9pt; font-weight: 700; color: #1a3a6b;
+      text-align: center; flex-shrink: 0;
+    }
+    .rpt-kop-text h1 { font-size: 13pt; font-weight: 700; color: #1a3a6b; }
+    .rpt-kop-text p  { font-size: 9.5pt; color: #444; margin-top: 2px; }
+    .rpt-doc-title {
+      text-align: center;
+      font-size: 13pt;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: #1a3a6b;
+      border: 2px solid #1a3a6b;
+      padding: 10px 0;
+      margin: 18px 0 20px;
+    }
+    .rpt-meta-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px 24px;
+      margin-bottom: 18px;
+      font-size: 10pt;
+    }
+    .rpt-meta-grid .rml { color: #555; }
+    .rpt-meta-grid .rmv { font-weight: 700; }
+    .rpt-section-title {
+      background: #1a3a6b;
+      color: #fff;
+      padding: 5px 12px;
+      font-size: 10.5pt;
+      font-weight: 700;
+      margin: 20px 0 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+    .rpt-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 9.5pt;
+      margin-bottom: 14px;
+    }
+    .rpt-table th {
+      background: #dbeafe;
+      border: 1px solid #93c5fd;
+      padding: 6px 8px;
+      text-align: center;
+      font-weight: 700;
+      color: #1a3a6b;
+    }
+    .rpt-table td {
+      border: 1px solid #d1d5db;
+      padding: 5px 8px;
+      vertical-align: middle;
+    }
+    .rpt-table tr:nth-child(even) td { background: #f9fafb; }
+    .rpt-capai  { color: #16a34a; font-weight: 700; }
+    .rpt-tidak  { color: #dc2626; font-weight: 700; }
+    .rpt-tiada  { color: #6b7280; font-style: italic; }
+    .rpt-notice {
+      border: 1px solid #fcd34d;
+      background: #fef9c3;
+      padding: 8px 12px;
+      font-size: 9pt;
+      color: #78350f;
+      margin-bottom: 14px;
+    }
+    .rpt-sign-section {
+      margin-top: 32px;
+      border-top: 2px solid #1a3a6b;
+      padding-top: 20px;
+    }
+    .rpt-sign-title {
+      font-size: 11pt;
+      font-weight: 700;
+      color: #1a3a6b;
+      text-transform: uppercase;
+      margin-bottom: 24px;
+    }
+    .rpt-sign-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
+    }
+    .rpt-sign-box {
+      border: 1px solid #d1d5db;
+      padding: 14px 16px 10px;
+      border-radius: 4px;
+    }
+    .rpt-sign-role {
+      font-size: 9pt;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: #1a3a6b;
+      margin-bottom: 12px;
+      border-bottom: 1px solid #e5e7eb;
+      padding-bottom: 6px;
+    }
+    .rpt-sign-field {
+      margin-top: 8px;
+      font-size: 9.5pt;
+    }
+    .rpt-sign-field label { color: #6b7280; font-size: 8.5pt; display: block; margin-top: 10px; }
+    .rpt-sign-line {
+      border: none; border-bottom: 1px solid #1a3a6b;
+      width: 100%; margin-top: 4px; height: 26px;
+      display: block;
+    }
+    .rpt-sign-stamp {
+      border: 2px dashed #d1d5db;
+      height: 80px;
+      margin-top: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 8.5pt;
+      color: #9ca3af;
+    }
+    .rpt-footer-note {
+      margin-top: 28px;
+      font-size: 8pt;
+      color: #6b7280;
+      border-top: 1px solid #e5e7eb;
+      padding-top: 8px;
+      text-align: center;
+    }
+
+    @media print {
+      body > *:not(#print-report) { display: none !important; }
+      #print-report { display: block !important; position: static !important; overflow: visible !important; }
+      .rpt-close, .rpt-print-btn { display: none !important; }
+      .rpt-body { padding: 10mm 14mm 16mm; }
+      .rpt-sign-box { break-inside: avoid; }
+      .rpt-section-title { break-after: avoid; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Header ── -->
+<header>
+  <div class="header-left">
+    <h1>Dashboard PLORR — Sijil Teknologi Maklumat</h1>
+    <p>Kolej Komuniti Bandar Darulaman (KKBDA) &nbsp;|&nbsp; Pelaporan Pencapaian PLO Program</p>
+  </div>
+  <div class="header-right">
+    <span class="header-badge" id="hdr-session">Sesi: Semua</span>
+    <span class="header-badge" id="hdr-kpi">Sasaran PLO: 80%</span>
+    <button class="btn-present" onclick="showPresent()">Mode Pembentangan</button>
+  </div>
+</header>
+
+<!-- ── Tabs ── -->
+<nav class="tabs">
+  <button class="tab-btn active" onclick="switchTab('kohort',this)">Gambaran Program</button>
+  <button class="tab-btn" onclick="switchTab('kelas',this)">Paparan Kelas</button>
+  <button class="tab-btn" onclick="switchTab('pelajar',this)">Paparan Pelajar</button>
+  <button class="tab-btn" onclick="switchTab('sahkan',this)">Semakan &amp; Pengesahan</button>
+  <button class="tab-btn" onclick="switchTab('cqi',this)">CQI &amp; Pelaporan</button>
+</nav>
+
+<!-- ── Main ── -->
+<main>
+
+  <!-- ========== PAGE 1: GAMBARAN PROGRAM / KOHORT ========== -->
+  <div class="page active" id="page-kohort">
+
+    <div class="filters">
+      <div class="filter-group">
+        <label>Kohort</label>
+        <select id="f-kohort" onchange="renderKohort()">
+          <option value="all">Semua Kohort</option>
+          <option value="STM4">STM 4 (2024/2025)</option>
+          <option value="STM3">STM 3 (2023/2024)</option>
+          <option value="M1">M1 (2024/2025)</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>Sesi Akademik</label>
+        <select id="f-sesi" onchange="renderKohort()">
+          <option value="all">Semua Sesi</option>
+          <option value="2024/2025">2024/2025</option>
+          <option value="2023/2024">2023/2024</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="notice notice-info" id="kohort-notice">
+      &#9432;&nbsp; Data ini adalah contoh ilustrasi berdasarkan struktur PLO program STM. Angka sebenar mesti dikemas kini daripada CLORR dan data penilaian yang disahkan. Data hilang ditanda <strong>Tiada Data</strong>, bukan sifar.
+    </div>
+
+    <div class="cards-row" id="kohort-cards"></div>
+
+    <div class="panel">
+      <h3>Pencapaian PLO Program — Gambaran Keseluruhan</h3>
+      <div class="chart-box-lg" id="chart-kohort-bar"></div>
+      <p class="kpi-note"><span class="kpi-line-swatch"></span> Garisan oren = Sasaran KPI (80%)</p>
+    </div>
+
+    <div class="panel">
+      <h3>Jadual Ringkasan PLO</h3>
+      <div class="tbl-wrap">
+        <table id="tbl-kohort"></table>
+      </div>
+    </div>
+
+  </div><!-- /page-kohort -->
+
+
+  <!-- ========== PAGE 2: PAPARAN KELAS ========== -->
+  <div class="page" id="page-kelas">
+
+    <div class="filters">
+      <div class="filter-group">
+        <label>Kohort</label>
+        <select id="f-kelas-kohort" onchange="renderKelas()">
+          <option value="all">Semua</option>
+          <option value="STM4">STM 4</option>
+          <option value="STM3">STM 3</option>
+          <option value="M1">M1</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>PLO</label>
+        <select id="f-kelas-plo" onchange="renderKelas()">
+          <option value="all">Semua PLO</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="notice notice-info">
+      &#9432;&nbsp; Peratusan menunjukkan <strong>% pelajar yang mencapai ambang individu</strong> bagi PLO tersebut, bukan purata markah kelas. Bilangan pelajar bagi setiap kelas ditunjukkan dalam jadual.
+    </div>
+
+    <div class="panel">
+      <h3>Perbandingan Pencapaian PLO Mengikut Kelas</h3>
+      <div class="chart-box-lg" id="chart-kelas-bar"></div>
+      <p class="kpi-note"><span class="kpi-line-swatch"></span> Garisan oren = Sasaran KPI (80%)</p>
+    </div>
+
+    <div class="panel">
+      <h3>Butiran Pencapaian PLO Mengikut Kelas</h3>
+      <div class="tbl-wrap">
+        <table id="tbl-kelas"></table>
+      </div>
+    </div>
+
+  </div><!-- /page-kelas -->
+
+
+  <!-- ========== PAGE 3: PAPARAN PELAJAR INDIVIDU ========== -->
+  <div class="page" id="page-pelajar">
+
+    <div class="notice notice-info" id="pelajar-notice">
+      &#128274;&nbsp; Paparan ini mengandungi data pelajar individu. Pastikan paparan ini hanya ditunjukkan kepada pengguna yang diberi kuasa. Dalam <strong>Mode Pembentangan</strong>, nama pelajar disamarkan.
+    </div>
+
+    <div class="filters" id="pelajar-filters">
+      <div class="filter-group">
+        <label>Kelas</label>
+        <select id="f-pelajar-kelas" onchange="filterPelajar()">
+          <option value="all">Semua Kelas</option>
+          <option value="STM 4A">STM 4A</option>
+          <option value="STM 4B">STM 4B</option>
+          <option value="STM 3B">STM 3B</option>
+          <option value="M1">M1</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>Cari Pelajar</label>
+        <input type="text" id="f-pelajar-cari" placeholder="Nama atau ID..." oninput="filterPelajar()" />
+      </div>
+    </div>
+
+    <!-- Student list (hidden when viewing individual) -->
+    <div id="pelajar-list-view">
+      <div class="panel">
+        <h3>Senarai Pelajar</h3>
+        <div class="tbl-wrap">
+          <table id="tbl-pelajar-list"></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Individual student view (hidden by default) -->
+    <div id="pelajar-detail-view" style="display:none;">
+      <span class="back-link" onclick="backToList()">&#8592; Kembali ke senarai pelajar</span>
+
+      <div class="student-card-header" id="student-hdr"></div>
+
+      <div class="two-col">
+        <div class="panel">
+          <h3>Profil Pencapaian PLO — Spider Web</h3>
+          <div class="chart-box-radar" id="chart-radar"></div>
+          <p class="kpi-note" style="margin-top:4px;">Lingkaran luar = Sasaran 80%. PLO tanpa data tidak ditunjukkan sebagai sifar.</p>
+        </div>
+        <div class="panel">
+          <h3>Nilai PLO Individu</h3>
+          <div class="tbl-wrap">
+            <table id="tbl-pelajar-plo"></table>
+          </div>
+          <div class="notice notice-info" style="margin-top:14px; margin-bottom:0; font-size:0.77rem;">
+            PLO yang ditanda <span class="badge badge-tiada">Tiada Data</span> bermaksud data penilaian bagi PLO tersebut belum tersedia atau belum disahkan — bukan bermakna pelajar tidak mencapainya.
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div><!-- /page-pelajar -->
+
+
+  <!-- ========== PAGE 4: SEMAKAN & PENGESAHAN ========== -->
+  <div class="page" id="page-sahkan">
+
+    <div class="notice">
+      &#9888;&nbsp; <strong>Penting:</strong> Memaparkan data dalam dashboard ini <strong>tidak bermakna</strong> data tersebut telah disahkan atau diluluskan. Status pengesahan mesti direkodkan secara berasingan selepas semakan pasukan program.
+    </div>
+
+    <div class="verif-meta">
+      <div class="verif-item">
+        <div class="vi-label">Sumber Data</div>
+        <div class="vi-value">Lampiran G & H (PDF), CLORR Kursus</div>
+      </div>
+      <div class="verif-item">
+        <div class="vi-label">Tempoh Pelaporan</div>
+        <div class="vi-value">Sesi 2024/2025</div>
+      </div>
+      <div class="verif-item">
+        <div class="vi-label">Kaedah Pengiraan</div>
+        <div class="vi-value">% pelajar capai ambang individu bagi setiap PLO</div>
+      </div>
+      <div class="verif-item">
+        <div class="vi-label">Dikemas Kini</div>
+        <div class="vi-value" id="last-updated">—</div>
+      </div>
+      <div class="verif-item">
+        <div class="vi-label">Matriks CLO–PLO</div>
+        <div class="vi-value">Disahkan (dokumen kurikulum)</div>
+      </div>
+      <div class="verif-item">
+        <div class="vi-label">Sasaran PLO (KPI)</div>
+        <div class="vi-value">80% pelajar mesti capai ambang bagi setiap PLO</div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3>Status Pengesahan Data Mengikut PLO</h3>
+      <div class="tbl-wrap">
+        <table id="tbl-sahkan"></table>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3>Rekod Semakan Mesyuarat</h3>
+      <div class="filters">
+        <div class="filter-group">
+          <label>Tarikh Mesyuarat</label>
+          <input type="date" id="verif-tarikh" />
+        </div>
+        <div class="filter-group">
+          <label>Status Keseluruhan</label>
+          <select id="verif-status">
+            <option value="">— Pilih —</option>
+            <option>Belum Disemak</option>
+            <option>Sedang Disemak</option>
+            <option>Disahkan</option>
+            <option>Ditolak — Perlu Diperbetulkan</option>
+          </select>
+        </div>
+      </div>
+      <label style="font-size:0.78rem; font-weight:600; color:var(--muted); display:block; margin-bottom:6px;">CATATAN PERBINCANGAN &amp; KEPUTUSAN MESYUARAT</label>
+      <textarea class="cqi-textarea" id="verif-notes" rows="5" placeholder="Rekodkan perbincangan, keputusan dan tindakan yang dipersetujui semasa mesyuarat..."></textarea>
+      <button class="btn btn-primary" style="margin-top:10px;" onclick="saveVerif()">Simpan Rekod</button>
+      <span id="verif-save-msg" style="margin-left:10px; font-size:0.78rem; color:var(--green); display:none;">&#10003; Rekod disimpan</span>
+    </div>
+
+    <div class="panel">
+      <h3>Rekod Yang Perlu Dibendera</h3>
+      <div class="tbl-wrap">
+        <table id="tbl-bendera"></table>
+      </div>
+    </div>
+
+  </div><!-- /page-sahkan -->
+
+
+  <!-- ========== PAGE 5: CQI & PELAPORAN ========== -->
+  <div class="page" id="page-cqi">
+
+    <div class="panel">
+      <h3>PLO Yang Memerlukan Perhatian</h3>
+      <div id="cqi-alert-area"></div>
+    </div>
+
+    <div class="panel">
+      <h3>Pelan Tindakan CQI</h3>
+      <div class="notice notice-info" style="margin-bottom:14px;">
+        Rekodkan dapatan, cadangan tindakan, pihak bertanggungjawab dan tempoh. Semakan keberkesanan dilakukan pada sesi berikutnya apabila data baru tersedia.
+      </div>
+      <div class="tbl-wrap">
+        <table id="tbl-cqi"></table>
+      </div>
+      <button class="btn btn-primary" style="margin-top:14px;" onclick="addCQIRow()">+ Tambah Tindakan</button>
+    </div>
+
+    <div class="panel">
+      <h3>Semakan Tindakan Sesi Terdahulu</h3>
+      <div class="tbl-wrap">
+        <table id="tbl-cqi-prev"></table>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3>Ringkasan Untuk Mesyuarat</h3>
+      <p style="font-size:0.82rem; color:var(--muted); margin-bottom:14px;">Ringkasan ini sesuai dicetak atau dipaparkan semasa pembentangan mesyuarat akademik.</p>
+      <div id="cqi-summary"></div>
+      <div style="margin-top:20px; padding-top:18px; border-top:2px solid var(--border);">
+        <p style="font-weight:700; font-size:0.9rem; color:var(--blue-dark); margin-bottom:6px;">&#128438; Jana Laporan Rasmi PLORR</p>
+        <p style="font-size:0.8rem; color:var(--muted); margin-bottom:12px;">Hasilkan laporan berformat rasmi lengkap dengan kepala surat, jadual pencapaian PLO, pelan CQI dan ruangan tandatangan Ketua Program serta Timbalan Pengarah (Akademik) untuk tujuan dokumentasi akreditasi MBOT.</p>
+        <button class="btn-print" onclick="janaLaporan()">&#128438;&nbsp; Jana &amp; Cetak Laporan PLORR</button>
+      </div>
+    </div>
+
+  </div><!-- /page-cqi -->
+
+</main>
+
+<!-- ── Print Report Overlay ── -->
+<div id="print-report">
+  <button class="rpt-close" onclick="tutupLaporan()">&#10005; Tutup</button>
+  <button class="rpt-print-btn" onclick="window.print()">&#128438; Cetak / Simpan PDF</button>
+  <div class="rpt-body" id="rpt-body-content"></div>
+</div>
+
+<!-- ── Presentation Mode Overlay ── -->
+<div class="present-overlay" id="present-overlay">
+  <div class="present-box">
+    <h2>&#9654; Mode Pembentangan</h2>
+    <p>Dalam mod ini, maklumat pengenalan pelajar (nama penuh &amp; nombor matrik) akan disamarkan. Hanya paparan agregat kohort, kelas dan PLO akan ditunjukkan. Paparan pelajar individu akan disembunyikan.</p>
+    <p style="color:#dc2626; font-size:0.8rem;">&#9888; Pastikan anda dalam mod ini sebelum berkongsi skrin dalam mesyuarat.</p>
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="closePresent()">Batal</button>
+      <button class="btn btn-primary" onclick="activatePresent()">Aktifkan Mod Pembentangan</button>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Dashboard PLORR — Program Sijil Teknologi Maklumat, KKBDA &nbsp;|&nbsp; Data contoh ilustrasi sahaja — gunakan data STM yang disahkan &nbsp;|&nbsp; Sasaran PLO: 80%
+  <br><span style="color:#9ca3af;">Made with IBM Bob</span>
+</footer>
+
+<script>
+// ═══════════════════════════════════════════════════
+// DATA MODEL (CONTOH ILUSTRASI — GANTI DENGAN DATA SEBENAR)
+// ═══════════════════════════════════════════════════
+
+const KPI = 80; // Sasaran PLO: sekurang-kurangnya 80% pelajar capai ambang
+
+// PLO definitions
+const PLO_LIST = [
+  { id:'PLO1', label:'PLO1', desc:'Pengetahuan Bidang IT', domain:'Kognitif' },
+  { id:'PLO2', label:'PLO2', desc:'Kemahiran Teknikal & Amali', domain:'Psikomotor' },
+  { id:'PLO3', label:'PLO3', desc:'Penyelesaian Masalah', domain:'Kognitif' },
+  { id:'PLO4', label:'PLO4', desc:'Komunikasi & Penyampaian', domain:'Afektif' },
+  { id:'PLO5', label:'PLO5', desc:'Kerja Berpasukan', domain:'Afektif' },
+  { id:'PLO6', label:'PLO6', desc:'Etika & Profesionalisme', domain:'Afektif' },
+  { id:'PLO7', label:'PLO7', desc:'Pembelajaran Sepanjang Hayat', domain:'Kognitif' },
+];
+
+// Class-level PLO attainment (% students reaching threshold)
+// null = Tiada Data (not zero!)
+const CLASS_DATA = {
+  'STM 4A': { kohort:'STM4', sesi:'2024/2025', n:22, plo:{
+    PLO1:86, PLO2:82, PLO3:77, PLO4:91, PLO5:86, PLO6:95, PLO7:73
+  }},
+  'STM 4B': { kohort:'STM4', sesi:'2024/2025', n:20, plo:{
+    PLO1:80, PLO2:75, PLO3:70, PLO4:85, PLO5:80, PLO6:90, PLO7:null
+  }},
+  'STM 3B': { kohort:'STM3', sesi:'2023/2024', n:18, plo:{
+    PLO1:78, PLO2:83, PLO3:72, PLO4:89, PLO5:78, PLO6:94, PLO7:67
+  }},
+  'M1':     { kohort:'M1',   sesi:'2024/2025', n:15, plo:{
+    PLO1:93, PLO2:87, PLO3:80, PLO4:87, PLO5:null, PLO6:100, PLO7:80
+  }},
+};
+
+// Individual student data (% attainment per PLO, null = Tiada Data)
+const STUDENTS = [
+  { id:'STM4A-001', name:'Ahmad Aidyl Muqriz',     kelas:'STM 4A', kohort:'STM4',
+    plo:{ PLO1:88, PLO2:85, PLO3:72, PLO4:90, PLO5:85, PLO6:95, PLO7:75 }},
+  { id:'STM4A-002', name:'Nurul Ain Binti Razali', kelas:'STM 4A', kohort:'STM4',
+    plo:{ PLO1:92, PLO2:78, PLO3:80, PLO4:95, PLO5:88, PLO6:98, PLO7:70 }},
+  { id:'STM4A-003', name:'Muhammad Hafiz',          kelas:'STM 4A', kohort:'STM4',
+    plo:{ PLO1:75, PLO2:80, PLO3:68, PLO4:88, PLO5:82, PLO6:90, PLO7:null }},
+  { id:'STM4B-001', name:'Ahmad Aiman',             kelas:'STM 4B', kohort:'STM4',
+    plo:{ PLO1:82, PLO2:70, PLO3:65, PLO4:80, PLO5:75, PLO6:88, PLO7:null }},
+  { id:'STM4B-002', name:'Siti Norzalina',          kelas:'STM 4B', kohort:'STM4',
+    plo:{ PLO1:78, PLO2:80, PLO3:75, PLO4:90, PLO5:85, PLO6:92, PLO7:null }},
+  { id:'STM3B-001', name:'Ahmad Farish Iskandar',   kelas:'STM 3B', kohort:'STM3',
+    plo:{ PLO1:80, PLO2:85, PLO3:70, PLO4:88, PLO5:76, PLO6:95, PLO7:65 }},
+  { id:'STM3B-002', name:'Aina Syafiqah',           kelas:'STM 3B', kohort:'STM3',
+    plo:{ PLO1:76, PLO2:82, PLO3:74, PLO4:90, PLO5:80, PLO6:93, PLO7:69 }},
+  { id:'M1-001',    name:'Adam Hakim',               kelas:'M1',     kohort:'M1',
+    plo:{ PLO1:95, PLO2:88, PLO3:82, PLO4:88, PLO5:null, PLO6:100, PLO7:82 }},
+  { id:'M1-002',    name:'Rosnah Binti Yahya',       kelas:'M1',     kohort:'M1',
+    plo:{ PLO1:91, PLO2:86, PLO3:78, PLO4:86, PLO5:null, PLO6:100, PLO7:78 }},
+];
+
+// Verification flags
+const BENDERA = [
+  { plo:'PLO7', kelas:'STM 4B', isu:'Data PLO7 belum tersedia — CLORR kursus berkaitan belum dikemukakan', status:'Belum Disemak' },
+  { plo:'PLO5', kelas:'M1',     isu:'Data PLO5 bagi kohort M1 tiada — kursus penyumbang belum dikenal pasti', status:'Belum Disemak' },
+  { plo:'PLO3', kelas:'STM 4B', isu:'Pencapaian PLO3 (70%) di bawah sasaran 80% — perlu analisis lanjut', status:'Sedang Disemak' },
+  { plo:'PLO3', kelas:'STM 3B', isu:'Pencapaian PLO3 (72%) di bawah sasaran 80% — isu berulang', status:'Sedang Disemak' },
+  { plo:'PLO7', kelas:'STM 3B', isu:'Pencapaian PLO7 (67%) di bawah sasaran 80%', status:'Sedang Disemak' },
+];
+
+// CQI actions
+let CQI_ACTIONS = [
+  { dapatan:'PLO3 di bawah sasaran dalam STM 4B & STM 3B — kemahiran penyelesaian masalah lemah', tindakan:'Tambah latihan penyelesaian masalah berasaskan senario dalam kursus berkaitan', tanggungjawab:'Pensyarah kursus berkaitan + KPRO', tempoh:'Sesi 2025/2026 Sem 1', status:'Dalam perancangan' },
+  { dapatan:'PLO7 tiada data dalam STM 4B', tindakan:'Kenal pasti dan pastikan CLORR kursus penyumbang PLO7 dikemukakan', tanggungjawab:'Penyelaras Program', tempoh:'Sebelum mesyuarat semasa', status:'Dalam perancangan' },
+];
+
+let CQI_PREV = [
+  { sesi:'2023/2024', dapatan:'PLO4 di bawah sasaran dalam STM 3A', tindakan:'Tambah aktiviti pembentangan dalam kursus komunikasi', dilaksanakan:'Ya', eviden:'Jadual aktiviti, laporan kursus', kesan:'PLO4 meningkat dari 72% → 89%', status:'Selesai — Berkesan' },
+];
+
+// ═══════════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════════
+let presentMode = false;
+let currentStudentId = null;
+let radarChart = null;
+
+function statusBadge(val, kpi) {
+  if (val === null || val === undefined) return '<span class="badge badge-tiada">Tiada Data</span>';
+  if (val >= kpi) return '<span class="badge badge-capai">Capai</span>';
+  return '<span class="badge badge-tidak">Tidak Capai</span>';
+}
+function pbarHtml(val, kpi) {
+  if (val === null || val === undefined) return '<span class="badge badge-tiada">Tiada Data</span>';
+  const cls = val >= kpi ? 'capai' : 'tidak';
+  const color = val >= kpi ? 'var(--green)' : 'var(--red)';
+  return `<div class="pbar-wrap"><div class="pbar-track"><div class="pbar-fill ${cls}" style="width:${val}%; background:${color}"></div></div><span class="pbar-pct" style="color:${color}">${val}%</span></div>`;
+}
+
+function getFilteredClasses() {
+  const kh = document.getElementById('f-kohort')?.value || 'all';
+  const ss = document.getElementById('f-sesi')?.value  || 'all';
+  return Object.entries(CLASS_DATA).filter(([k,v]) =>
+    (kh === 'all' || v.kohort === kh) &&
+    (ss === 'all' || v.sesi   === ss)
+  );
+}
+
+function calcProgramPLO(classes) {
+  // Weight by student count
+  const totals = {};
+  const counts = {};
+  PLO_LIST.forEach(p => { totals[p.id] = 0; counts[p.id] = 0; });
+  classes.forEach(([k,v]) => {
+    PLO_LIST.forEach(p => {
+      if (v.plo[p.id] !== null && v.plo[p.id] !== undefined) {
+        totals[p.id] += v.plo[p.id] * v.n;
+        counts[p.id] += v.n;
+      }
+    });
+  });
+  const result = {};
+  PLO_LIST.forEach(p => {
+    result[p.id] = counts[p.id] > 0 ? Math.round(totals[p.id] / counts[p.id]) : null;
+  });
+  return result;
+}
+
+// ═══════════════════════════════════════════════════
+// PAGE 1: KOHORT
+// ═══════════════════════════════════════════════════
+function renderKohort() {
+  const classes = getFilteredClasses();
+  const prog = calcProgramPLO(classes);
+  const totalN = classes.reduce((s,[,v]) => s+v.n, 0);
+  const capai  = PLO_LIST.filter(p => prog[p.id] !== null && prog[p.id] >= KPI).length;
+  const tidak  = PLO_LIST.filter(p => prog[p.id] !== null && prog[p.id] < KPI).length;
+  const tiada  = PLO_LIST.filter(p => prog[p.id] === null).length;
+
+  // Cards
+  document.getElementById('kohort-cards').innerHTML = `
+    <div class="card"><div class="card-label">Jumlah Pelajar</div><div class="card-value">${totalN}</div><div class="card-sub">${classes.length} kelas dalam analisis</div></div>
+    <div class="card green"><div class="card-label">PLO Capai Sasaran</div><div class="card-value">${capai}</div><div class="card-sub">daripada ${PLO_LIST.length} PLO</div></div>
+    <div class="card red"><div class="card-label">PLO Tidak Capai</div><div class="card-value">${tidak}</div><div class="card-sub">di bawah sasaran ${KPI}%</div></div>
+    <div class="card amber"><div class="card-label">PLO Tiada Data</div><div class="card-value">${tiada}</div><div class="card-sub">belum tersedia</div></div>
+  `;
+
+  // Bar chart
+  const labels = PLO_LIST.map(p => p.label + '\n' + p.desc.substring(0,20));
+  const vals   = PLO_LIST.map(p => prog[p.id]);
+  const colors = PLO_LIST.map(p =>
+    prog[p.id] === null ? '#9ca3af' :
+    prog[p.id] >= KPI  ? '#16a34a' : '#dc2626'
+  );
+
+  const _ecKohort = echarts.getInstanceByDom(document.getElementById('chart-kohort-bar'));
+  if (_ecKohort) _ecKohort.dispose();
+  const ec = echarts.init(document.getElementById('chart-kohort-bar'));
+  ec.setOption({
+    tooltip: { trigger:'axis', formatter: p => {
+      const v = p[0]?.value;
+      return v === null ? `${p[0]?.axisValue}<br/>Tiada Data` : `${p[0]?.axisValue}<br/>${v}%`;
+    }},
+    grid: { left:48, right:24, top:20, bottom:80 },
+    xAxis: { type:'category', data: PLO_LIST.map(p=>p.label), axisLabel:{ fontSize:11 } },
+    yAxis: { type:'value', min:0, max:100, axisLabel:{ formatter:'{value}%', fontSize:11 } },
+    series: [
+      { type:'bar', data: vals.map((v,i) => ({ value:v, itemStyle:{ color:colors[i] }})),
+        label:{ show:true, position:'top', formatter: p => p.value === null ? 'N/A' : p.value+'%', fontSize:11 }
+      },
+      { type:'line', data: PLO_LIST.map(()=>KPI), lineStyle:{ color:'#d97706', type:'dashed', width:2 },
+        symbol:'none', tooltip:{ show:false }
+      }
+    ]
+  }, true);
+
+  // Table
+  let html = '<thead><tr><th>PLO</th><th>Penerangan</th><th>Domain</th><th>Sasaran</th><th>Pencapaian</th><th>Progres</th><th>Status</th></tr></thead><tbody>';
+  PLO_LIST.forEach(p => {
+    const v = prog[p.id];
+    html += `<tr>
+      <td><strong>${p.label}</strong></td>
+      <td>${p.desc}</td>
+      <td>${p.domain}</td>
+      <td>${KPI}%</td>
+      <td>${v !== null ? v+'%' : '—'}</td>
+      <td>${pbarHtml(v, KPI)}</td>
+      <td>${statusBadge(v, KPI)}</td>
+    </tr>`;
+  });
+  html += '</tbody>';
+  document.getElementById('tbl-kohort').innerHTML = html;
+
+  document.getElementById('hdr-session').textContent =
+    'Sesi: ' + (document.getElementById('f-sesi').value === 'all' ? 'Semua' : document.getElementById('f-sesi').value);
+}
+
+// ═══════════════════════════════════════════════════
+// PAGE 2: KELAS
+// ═══════════════════════════════════════════════════
+function renderKelas() {
+  const kh = document.getElementById('f-kelas-kohort')?.value || 'all';
+  const selPLO = document.getElementById('f-kelas-plo')?.value || 'all';
+
+  const classes = Object.entries(CLASS_DATA).filter(([,v]) => kh === 'all' || v.kohort === kh);
+  const ploFilter = selPLO === 'all' ? PLO_LIST : PLO_LIST.filter(p => p.id === selPLO);
+
+  const classNames = classes.map(([k])=>k);
+  const colors7 = ['#2563a8','#16a34a','#dc2626','#d97706','#7c3aed','#0891b2','#be185d'];
+
+  const series = ploFilter.map((p,i) => ({
+    name: p.label,
+    type: 'bar',
+    data: classes.map(([,v]) => v.plo[p.id]),
+    itemStyle:{ color: colors7[i % colors7.length] }
+  }));
+  series.push({
+    name:'Sasaran KPI', type:'line',
+    data: classNames.map(()=>KPI),
+    lineStyle:{ color:'#d97706', type:'dashed', width:2 },
+    symbol:'none', tooltip:{ show:false }
+  });
+
+  const _ecKelas = echarts.getInstanceByDom(document.getElementById('chart-kelas-bar'));
+  if (_ecKelas) _ecKelas.dispose();
+  const ec = echarts.init(document.getElementById('chart-kelas-bar'));
+  ec.setOption({
+    tooltip: { trigger:'axis' },
+    legend: { bottom:0, data: ploFilter.map(p=>p.label), textStyle:{ fontSize:11 } },
+    grid: { left:48, right:20, top:20, bottom:60 },
+    xAxis: { type:'category', data:classNames, axisLabel:{ fontSize:11 } },
+    yAxis: { type:'value', min:0, max:100, axisLabel:{ formatter:'{value}%', fontSize:11 } },
+    series
+  }, true);
+
+  // Table
+  let html = '<thead><tr><th>Kelas</th><th>Kohort</th><th>Bil. Pelajar</th>';
+  ploFilter.forEach(p => html += `<th>${p.label}</th>`);
+  html += '</tr></thead><tbody>';
+  classes.forEach(([k,v]) => {
+    html += `<tr><td><strong>${k}</strong></td><td>${v.kohort}</td><td>${v.n}</td>`;
+    ploFilter.forEach(p => {
+      const val = v.plo[p.id];
+      html += `<td>${val !== null && val !== undefined ? val+'%' : '<span class="badge badge-tiada">Tiada Data</span>'}</td>`;
+    });
+    html += '</tr>';
+  });
+  html += '</tbody>';
+  document.getElementById('tbl-kelas').innerHTML = html;
+}
+
+function initKelasPLOFilter() {
+  const sel = document.getElementById('f-kelas-plo');
+  sel.innerHTML = '<option value="all">Semua PLO</option>';
+  PLO_LIST.forEach(p => sel.innerHTML += `<option value="${p.id}">${p.label} — ${p.desc}</option>`);
+}
+
+// ═══════════════════════════════════════════════════
+// PAGE 3: PELAJAR
+// ═══════════════════════════════════════════════════
+function filterPelajar() {
+  const kelas = document.getElementById('f-pelajar-kelas').value;
+  const cari  = document.getElementById('f-pelajar-cari').value.toLowerCase();
+  const filtered = STUDENTS.filter(s =>
+    (kelas === 'all' || s.kelas === kelas) &&
+    (cari === '' || s.name.toLowerCase().includes(cari) || s.id.toLowerCase().includes(cari))
+  );
+  renderPelajarList(filtered);
+}
+
+function renderPelajarList(list) {
+  let html = '<thead><tr><th>ID Pelajar</th><th>Nama Pelajar</th><th>Kelas</th><th>Kohort</th>';
+  PLO_LIST.forEach(p => html += `<th>${p.label}</th>`);
+  html += '<th>Tindakan</th></tr></thead><tbody>';
+  list.forEach(s => {
+    const nameDisplay = presentMode ? '<span style="color:var(--muted)">*** (Disamarkan)</span>' : s.name;
+    const idDisplay   = presentMode ? '***' : s.id;
+    html += `<tr>
+      <td>${idDisplay}</td>
+      <td>${nameDisplay}</td>
+      <td>${s.kelas}</td>
+      <td>${s.kohort}</td>`;
+    PLO_LIST.forEach(p => {
+      const v = s.plo[p.id];
+      html += `<td style="text-align:center;">${v !== null && v !== undefined ? v+'%' : '<span class="badge badge-tiada">N/A</span>'}</td>`;
+    });
+    html += `<td><button class="btn btn-primary" style="padding:4px 12px;font-size:0.76rem;" onclick="viewStudent('${s.id}')">Lihat &#8250;</button></td></tr>`;
+  });
+  html += '</tbody>';
+  document.getElementById('tbl-pelajar-list').innerHTML = html;
+}
+
+function viewStudent(id) {
+  currentStudentId = id;
+  const s = STUDENTS.find(x => x.id === id);
+  if (!s) return;
+
+  document.getElementById('pelajar-list-view').style.display = 'none';
+  document.getElementById('pelajar-filters').style.display = 'none';
+  document.getElementById('pelajar-detail-view').style.display = 'block';
+
+  const nameDisplay = presentMode ? 'Pelajar (Disamarkan)' : s.name;
+  const idDisplay   = presentMode ? '—' : s.id;
+  document.getElementById('student-hdr').innerHTML = `
+    <div>
+      <div class="sc-name">${nameDisplay}</div>
+      <div class="sc-meta">ID: ${idDisplay} &nbsp;|&nbsp; Kelas: ${s.kelas} &nbsp;|&nbsp; Kohort: ${s.kohort}</div>
+    </div>`;
+
+  // Radar chart
+  const ploWithData = PLO_LIST.filter(p => s.plo[p.id] !== null && s.plo[p.id] !== undefined);
+  const indicators  = ploWithData.map(p => ({ name: p.label + '\n' + p.desc.slice(0,16)+'…', max:100 }));
+  const vals        = ploWithData.map(p => s.plo[p.id]);
+  const kpiVals     = ploWithData.map(() => KPI);
+
+  if (radarChart) radarChart.dispose();
+  radarChart = echarts.init(document.getElementById('chart-radar'));
+  radarChart.setOption({
+    tooltip: {},
+    radar: {
+      indicator: indicators,
+      radius: '68%',
+      splitArea: { areaStyle:{ color:['#f0f7ff','#e0eeff','#d0e4ff','#c0d9ff','#b0cdff'] }},
+      axisLine:  { lineStyle:{ color:'#d1dff0' }},
+      splitLine: { lineStyle:{ color:'#d1dff0' }},
+    },
+    series: [
+      { type:'radar', data:[{ value:kpiVals, name:'Sasaran KPI',
+          areaStyle:{ color:'rgba(251,191,36,0.1)' }, lineStyle:{ color:'#d97706', type:'dashed', width:2 }, symbol:'none'
+        }]},
+      { type:'radar', data:[{ value:vals, name:nameDisplay,
+          areaStyle:{ color:'rgba(37,99,168,0.18)' }, lineStyle:{ color:'#2563a8', width:2 },
+          itemStyle:{ color:'#2563a8' }
+        }]}
+    ],
+    legend: { bottom:0, data:['Sasaran KPI', nameDisplay], textStyle:{fontSize:11} }
+  }, true);
+
+  // PLO table
+  let html = '<thead><tr><th>PLO</th><th>Penerangan</th><th>Pencapaian</th><th>Sasaran</th><th>Status</th></tr></thead><tbody>';
+  PLO_LIST.forEach(p => {
+    const v = s.plo[p.id];
+    html += `<tr>
+      <td><strong>${p.label}</strong></td>
+      <td>${p.desc}</td>
+      <td>${v !== null && v !== undefined ? v+'%' : '—'}</td>
+      <td>${KPI}%</td>
+      <td>${statusBadge(v, KPI)}</td>
+    </tr>`;
+  });
+  html += '</tbody>';
+  document.getElementById('tbl-pelajar-plo').innerHTML = html;
+}
+
+function backToList() {
+  document.getElementById('pelajar-detail-view').style.display = 'none';
+  document.getElementById('pelajar-list-view').style.display  = 'block';
+  document.getElementById('pelajar-filters').style.display    = 'flex';
+  currentStudentId = null;
+}
+
+// ═══════════════════════════════════════════════════
+// PAGE 4: SEMAKAN & PENGESAHAN
+// ═══════════════════════════════════════════════════
+function renderSahkan() {
+  // Verification table
+  const classes = Object.entries(CLASS_DATA);
+  const prog = calcProgramPLO(classes);
+
+  let html = '<thead><tr><th>PLO</th><th>Penerangan</th><th>Sumber Kursus</th><th>Pencapaian Program</th><th>Status Pengesahan</th></tr></thead><tbody>';
+  PLO_LIST.forEach(p => {
+    const v = prog[p.id];
+    const vStat = v === null ? '<span class="badge badge-tiada">Tiada Data</span>' :
+                  v >= KPI  ? '<span class="badge badge-disahkan">'+v+'%</span>' :
+                              '<span class="badge badge-tidak">'+v+'%</span>';
+    html += `<tr>
+      <td><strong>${p.label}</strong></td>
+      <td>${p.desc}</td>
+      <td style="color:var(--muted);font-size:0.8rem;">Mengikut matriks CLO–PLO</td>
+      <td>${vStat}</td>
+      <td><select class="verif-plo-status" data-plo="${p.id}" style="font-size:0.78rem; padding:4px 8px; border:1px solid var(--border); border-radius:4px;">
+        <option>Belum Disemak</option>
+        <option>Sedang Disemak</option>
+        <option>Disahkan</option>
+        <option>Ditolak</option>
+      </select></td>
+    </tr>`;
+  });
+  html += '</tbody>';
+  document.getElementById('tbl-sahkan').innerHTML = html;
+
+  // Bendera table
+  let bhtml = '<thead><tr><th>PLO</th><th>Kelas</th><th>Isu / Catatan</th><th>Status</th></tr></thead><tbody>';
+  BENDERA.forEach(b => {
+    const sc = b.status === 'Sedang Disemak' ? 'badge-semak' : 'badge-belum';
+    bhtml += `<tr>
+      <td><strong>${b.plo}</strong></td>
+      <td>${b.kelas}</td>
+      <td>${b.isu}</td>
+      <td><span class="badge ${sc}">${b.status}</span></td>
+    </tr>`;
+  });
+  bhtml += '</tbody>';
+  document.getElementById('tbl-bendera').innerHTML = bhtml;
+
+  // Date
+  document.getElementById('last-updated').textContent = new Date().toLocaleDateString('ms-MY', {day:'2-digit',month:'long',year:'numeric'});
+}
+
+function saveVerif() {
+  const msg = document.getElementById('verif-save-msg');
+  msg.style.display = 'inline';
+  setTimeout(() => msg.style.display='none', 2500);
+}
+
+// ═══════════════════════════════════════════════════
+// PAGE 5: CQI
+// ═══════════════════════════════════════════════════
+function renderCQI() {
+  // Alert area — PLOs below target
+  const classes = Object.entries(CLASS_DATA);
+  const prog = calcProgramPLO(classes);
+  let alerts = '';
+  PLO_LIST.forEach(p => {
+    const v = prog[p.id];
+    if (v === null) {
+      alerts += `<div class="notice" style="margin-bottom:8px;">&#9888; <strong>${p.label} — ${p.desc}</strong>: Data tidak tersedia — perlu dikumpulkan sebelum analisis boleh dibuat.</div>`;
+    } else if (v < KPI) {
+      alerts += `<div class="notice" style="margin-bottom:8px;">&#9660; <strong>${p.label} — ${p.desc}</strong>: Pencapaian ${v}% — di bawah sasaran ${KPI}%. Perlu tindakan CQI.</div>`;
+    }
+  });
+  if (!alerts) alerts = '<div class="notice notice-ok">&#10003; Semua PLO yang mempunyai data mencapai sasaran KPI pada analisis ini.</div>';
+  document.getElementById('cqi-alert-area').innerHTML = alerts;
+
+  // CQI table
+  let html = `<thead><tr><th>Dapatan / Isu</th><th>Cadangan Tindakan</th><th>Tanggungjawab</th><th>Tempoh</th><th>Status</th></tr></thead><tbody>`;
+  CQI_ACTIONS.forEach((r,i) => {
+    html += `<tr>
+      <td><textarea class="cqi-textarea" rows="2" onchange="CQI_ACTIONS[${i}].dapatan=this.value">${r.dapatan}</textarea></td>
+      <td><textarea class="cqi-textarea" rows="2" onchange="CQI_ACTIONS[${i}].tindakan=this.value">${r.tindakan}</textarea></td>
+      <td><input style="width:100%; border:1px solid var(--border); border-radius:4px; padding:4px 6px; font-size:0.8rem;" value="${r.tanggungjawab}" onchange="CQI_ACTIONS[${i}].tanggungjawab=this.value" /></td>
+      <td><input style="width:100%; border:1px solid var(--border); border-radius:4px; padding:4px 6px; font-size:0.8rem;" value="${r.tempoh}" onchange="CQI_ACTIONS[${i}].tempoh=this.value" /></td>
+      <td><select style="font-size:0.78rem; padding:4px 6px; border:1px solid var(--border); border-radius:4px;" onchange="CQI_ACTIONS[${i}].status=this.value">
+        <option ${r.status==='Dalam perancangan'?'selected':''}>Dalam perancangan</option>
+        <option ${r.status==='Dilaksanakan'?'selected':''}>Dilaksanakan</option>
+        <option ${r.status==='Selesai'?'selected':''}>Selesai</option>
+        <option ${r.status==='Tangguh'?'selected':''}>Tangguh</option>
+      </select></td>
+    </tr>`;
+  });
+  html += '</tbody>';
+  document.getElementById('tbl-cqi').innerHTML = html;
+
+  // Previous CQI
+  let phtml = '<thead><tr><th>Sesi</th><th>Dapatan</th><th>Tindakan</th><th>Dilaksana?</th><th>Eviden</th><th>Kesan</th><th>Status</th></tr></thead><tbody>';
+  CQI_PREV.forEach(r => {
+    const sc = r.status.includes('Berkesan') ? 'badge-capai' : 'badge-semak';
+    phtml += `<tr>
+      <td>${r.sesi}</td>
+      <td>${r.dapatan}</td>
+      <td>${r.tindakan}</td>
+      <td><span class="badge badge-capai">${r.dilaksanakan}</span></td>
+      <td>${r.eviden}</td>
+      <td>${r.kesan}</td>
+      <td><span class="badge ${sc}">${r.status}</span></td>
+    </tr>`;
+  });
+  phtml += '</tbody>';
+  document.getElementById('tbl-cqi-prev').innerHTML = phtml;
+
+  // Summary
+  const totalN = Object.values(CLASS_DATA).reduce((s,v)=>s+v.n,0);
+  const allClasses = Object.entries(CLASS_DATA);
+  const progAll = calcProgramPLO(allClasses);
+  const capai = PLO_LIST.filter(p=>progAll[p.id]!==null && progAll[p.id]>=KPI).length;
+  const tidak = PLO_LIST.filter(p=>progAll[p.id]!==null && progAll[p.id]<KPI).length;
+  const tiada = PLO_LIST.filter(p=>progAll[p.id]===null).length;
+
+  document.getElementById('cqi-summary').innerHTML = `
+    <div style="background:var(--surface); border-radius:var(--radius); padding:18px 20px; font-size:0.85rem;">
+      <p style="font-weight:700; font-size:1rem; color:var(--blue-dark); margin-bottom:10px;">Ringkasan Pencapaian PLO — Program STM, KKBDA</p>
+      <table style="width:100%; border-collapse:collapse; font-size:0.82rem;">
+        <tr><td style="padding:4px 8px; color:var(--muted);">Jumlah pelajar dalam analisis:</td><td style="padding:4px 8px; font-weight:700;">${totalN} pelajar</td></tr>
+        <tr><td style="padding:4px 8px; color:var(--muted);">Jumlah PLO program:</td><td style="padding:4px 8px; font-weight:700;">${PLO_LIST.length} PLO</td></tr>
+        <tr><td style="padding:4px 8px; color:var(--muted);">PLO mencapai sasaran (≥${KPI}%):</td><td style="padding:4px 8px; font-weight:700; color:var(--green);">${capai} PLO</td></tr>
+        <tr><td style="padding:4px 8px; color:var(--muted);">PLO tidak mencapai sasaran:</td><td style="padding:4px 8px; font-weight:700; color:var(--red);">${tidak} PLO</td></tr>
+        <tr><td style="padding:4px 8px; color:var(--muted);">PLO tiada data:</td><td style="padding:4px 8px; font-weight:700; color:var(--grey);">${tiada} PLO</td></tr>
+        <tr><td style="padding:4px 8px; color:var(--muted);">Sasaran KPI:</td><td style="padding:4px 8px; font-weight:700;">${KPI}% pelajar mesti capai ambang bagi setiap PLO</td></tr>
+      </table>
+      <p style="margin-top:12px; font-size:0.77rem; color:var(--muted);">&#9888; Data ini adalah contoh ilustrasi. Angka sebenar mesti dikemas kini daripada CLORR dan data penilaian yang disahkan.</p>
+    </div>`;
+}
+
+function addCQIRow() {
+  CQI_ACTIONS.push({ dapatan:'', tindakan:'', tanggungjawab:'', tempoh:'', status:'Dalam perancangan' });
+  renderCQI();
+}
+
+// ═══════════════════════════════════════════════════
+// JANA LAPORAN RASMI PLORR
+// ═══════════════════════════════════════════════════
+function janaLaporan() {
+  const allClasses = Object.entries(CLASS_DATA);
+  const prog       = calcProgramPLO(allClasses);
+  const totalN     = Object.values(CLASS_DATA).reduce((s,v)=>s+v.n,0);
+  const capai      = PLO_LIST.filter(p=>prog[p.id]!==null&&prog[p.id]>=KPI).length;
+  const tidak      = PLO_LIST.filter(p=>prog[p.id]!==null&&prog[p.id]<KPI).length;
+  const tiada      = PLO_LIST.filter(p=>prog[p.id]===null).length;
+  const tarikh     = new Date().toLocaleDateString('ms-MY',{day:'2-digit',month:'long',year:'numeric'});
+  const sesi       = document.getElementById('f-sesi')?.value === 'all' ? 'Semua Sesi' : (document.getElementById('f-sesi')?.value || 'Sesi 2024/2025');
+
+  // --- PLO table rows ---
+  let ploRows = '';
+  PLO_LIST.forEach((p,i) => {
+    const v = prog[p.id];
+    const vTxt  = v===null ? '<span class="rpt-tiada">Tiada Data</span>' : v+'%';
+    const sTxt  = v===null ? '<span class="rpt-tiada">—</span>' : v>=KPI ? '<span class="rpt-capai">&#10003; Capai</span>' : '<span class="rpt-tidak">&#10007; Tidak Capai</span>';
+    ploRows += `<tr>
+      <td style="text-align:center;">${i+1}</td>
+      <td><strong>${p.label}</strong></td>
+      <td>${p.desc}</td>
+      <td style="text-align:center;">${p.domain}</td>
+      <td style="text-align:center;">${KPI}%</td>
+      <td style="text-align:center;">${vTxt}</td>
+      <td style="text-align:center;">${sTxt}</td>
+    </tr>`;
+  });
+
+  // --- Class table rows ---
+  let kelasRows = '';
+  allClasses.forEach(([k,v]) => {
+    kelasRows += `<tr><td><strong>${k}</strong></td><td style="text-align:center;">${v.kohort}</td><td style="text-align:center;">${v.n}</td>`;
+    PLO_LIST.forEach(p => {
+      const val = v.plo[p.id];
+      const cls = val===null?'rpt-tiada':val>=KPI?'rpt-capai':'rpt-tidak';
+      kelasRows += `<td style="text-align:center;" class="${cls}">${val!==null?val+'%':'N/A'}</td>`;
+    });
+    kelasRows += '</tr>';
+  });
+  let kelasHeader = '<tr><th>Kelas</th><th>Kohort</th><th>Bil. Pelajar</th>';
+  PLO_LIST.forEach(p => kelasHeader += `<th>${p.label}</th>`);
+  kelasHeader += '</tr>';
+
+  // --- CQI rows ---
+  let cqiRows = '';
+  CQI_ACTIONS.forEach((r,i) => {
+    const sc = r.status==='Selesai'?'rpt-capai':r.status==='Dalam perancangan'?'rpt-tiada':'';
+    cqiRows += `<tr>
+      <td style="text-align:center;">${i+1}</td>
+      <td>${r.dapatan||'—'}</td>
+      <td>${r.tindakan||'—'}</td>
+      <td>${r.tanggungjawab||'—'}</td>
+      <td>${r.tempoh||'—'}</td>
+      <td class="${sc}">${r.status}</td>
+    </tr>`;
+  });
+
+  // --- Catatan mesyuarat ---
+  const catatanRaw = document.getElementById('verif-notes')?.value || '';
+  const catatan    = catatanRaw.trim() || '<em style="color:#9ca3af;">Tiada catatan direkodkan.</em>';
+  const tarikhMsy  = document.getElementById('verif-tarikh')?.value || '';
+  const tarikhMsyFmt = tarikhMsy ? new Date(tarikhMsy).toLocaleDateString('ms-MY',{day:'2-digit',month:'long',year:'numeric'}) : '_______________';
+
+  // --- Bendera rows ---
+  let benderaRows = '';
+  BENDERA.forEach(b => {
+    const sc = b.status==='Sedang Disemak'?'rpt-tiada':'';
+    benderaRows += `<tr><td><strong>${b.plo}</strong></td><td>${b.kelas}</td><td>${b.isu}</td><td class="${sc}">${b.status}</td></tr>`;
+  });
+
+  const html = `
+  <div style="text-align:right; font-size:8.5pt; color:#6b7280; margin-bottom:8px;">
+    Rujukan: PLORR/STM/KKBDA/${new Date().getFullYear()} &nbsp;|&nbsp; Dijanakan: ${tarikh}
+  </div>
+
+  <div class="rpt-kop">
+    <div class="rpt-kop-logo">KKBDA</div>
+    <div class="rpt-kop-text">
+      <h1>Kolej Komuniti Bandar Darulaman (KKBDA)</h1>
+      <p>Jabatan Pendidikan Politeknik dan Kolej Komuniti (JPPKK)</p>
+      <p>Kementerian Pendidikan Tinggi Malaysia</p>
+    </div>
+  </div>
+
+  <div class="rpt-doc-title">
+    Laporan Semakan Hasil Pembelajaran Program (PLORR)<br>
+    <span style="font-size:11pt;">Program Sijil Teknologi Maklumat (STM)</span>
+  </div>
+
+  <div class="rpt-meta-grid">
+    <div><span class="rml">Nama Program:</span><br><span class="rmv">Sijil Teknologi Maklumat (STM)</span></div>
+    <div><span class="rml">Kod Program:</span><br><span class="rmv">STM / KKBDA</span></div>
+    <div><span class="rml">Sesi Pelaporan:</span><br><span class="rmv">${sesi}</span></div>
+    <div><span class="rml">Tarikh Laporan:</span><br><span class="rmv">${tarikh}</span></div>
+    <div><span class="rml">Jumlah Pelajar Dianalisis:</span><br><span class="rmv">${totalN} pelajar</span></div>
+    <div><span class="rml">Sasaran KPI PLO:</span><br><span class="rmv">≥ ${KPI}% pelajar mesti capai ambang bagi setiap PLO</span></div>
+    <div><span class="rml">Tarikh Mesyuarat Semakan:</span><br><span class="rmv">${tarikhMsyFmt}</span></div>
+    <div><span class="rml">Kaedah Pengiraan:</span><br><span class="rmv">% pelajar mencapai ambang individu bagi setiap PLO</span></div>
+  </div>
+
+  <div class="rpt-notice">
+    <strong>Nota:</strong> Data dalam laporan ini adalah <strong>contoh ilustrasi</strong>. Angka sebenar mesti dikemas kini daripada CLORR dan data penilaian yang disahkan oleh pasukan program. PLO yang ditanda "Tiada Data" bermaksud data belum tersedia, bukan bermakna PLO tidak dicapai.
+  </div>
+
+  <div class="rpt-section-title">A. Ringkasan Pencapaian PLO Program</div>
+  <table class="rpt-table" style="margin-bottom:10px; width:auto;">
+    <tr><th>PLO Capai Sasaran</th><th>PLO Tidak Capai</th><th>PLO Tiada Data</th><th>Jumlah PLO</th></tr>
+    <tr>
+      <td style="text-align:center;" class="rpt-capai">${capai} PLO</td>
+      <td style="text-align:center;" class="rpt-tidak">${tidak} PLO</td>
+      <td style="text-align:center;" class="rpt-tiada">${tiada} PLO</td>
+      <td style="text-align:center; font-weight:700;">${PLO_LIST.length} PLO</td>
+    </tr>
+  </table>
+
+  <div class="rpt-section-title">B. Pencapaian PLO Mengikut Program</div>
+  <table class="rpt-table">
+    <thead>
+      <tr><th>Bil.</th><th>Kod PLO</th><th>Pernyataan PLO</th><th>Domain</th><th>Sasaran KPI</th><th>Pencapaian</th><th>Status</th></tr>
+    </thead>
+    <tbody>${ploRows}</tbody>
+  </table>
+
+  <div class="rpt-section-title">C. Pencapaian PLO Mengikut Kelas</div>
+  <table class="rpt-table">
+    <thead>${kelasHeader}</thead>
+    <tbody>${kelasRows}</tbody>
+  </table>
+
+  <div class="rpt-section-title">D. Rekod Yang Dibendera / Memerlukan Perhatian</div>
+  <table class="rpt-table">
+    <thead><tr><th>PLO</th><th>Kelas</th><th>Isu / Catatan</th><th>Status</th></tr></thead>
+    <tbody>${benderaRows||'<tr><td colspan="4" style="text-align:center;color:#6b7280;font-style:italic;">Tiada rekod dibendera</td></tr>'}</tbody>
+  </table>
+
+  <div class="rpt-section-title">E. Pelan Tindakan Penambahbaikan (CQI)</div>
+  <table class="rpt-table">
+    <thead>
+      <tr><th>Bil.</th><th>Dapatan / Isu</th><th>Cadangan Tindakan</th><th>Pihak Bertanggungjawab</th><th>Tempoh</th><th>Status</th></tr>
+    </thead>
+    <tbody>${cqiRows||'<tr><td colspan="6" style="text-align:center;color:#6b7280;font-style:italic;">Tiada tindakan direkodkan</td></tr>'}</tbody>
+  </table>
+
+  <div class="rpt-section-title">F. Catatan Perbincangan Mesyuarat</div>
+  <div style="border:1px solid #d1d5db; padding:12px 14px; font-size:9.5pt; min-height:70px; white-space:pre-wrap;">${catatan}</div>
+
+  <div class="rpt-sign-section">
+    <div class="rpt-sign-title">G. Pengesahan Dan Tandatangan</div>
+    <div class="rpt-sign-grid">
+
+      <div class="rpt-sign-box">
+        <div class="rpt-sign-role">Ketua Program</div>
+        <div class="rpt-sign-field">
+          <label>Nama Penuh:</label>
+          <span class="rpt-sign-line"></span>
+          <label>No. Kad Pengenalan / No. Pekerja:</label>
+          <span class="rpt-sign-line"></span>
+          <label>Jawatan:</label>
+          <span class="rpt-sign-line" style="padding-top:4px; font-size:9pt; color:#555;">Ketua Program — Sijil Teknologi Maklumat</span>
+          <label>Tandatangan &amp; Tarikh:</label>
+          <span class="rpt-sign-line"></span>
+        </div>
+        <div class="rpt-sign-stamp">[ Cop Rasmi / Official Stamp ]</div>
+      </div>
+
+      <div class="rpt-sign-box">
+        <div class="rpt-sign-role">Timbalan Pengarah (Akademik)</div>
+        <div class="rpt-sign-field">
+          <label>Nama Penuh:</label>
+          <span class="rpt-sign-line"></span>
+          <label>No. Kad Pengenalan / No. Pekerja:</label>
+          <span class="rpt-sign-line"></span>
+          <label>Jawatan:</label>
+          <span class="rpt-sign-line" style="padding-top:4px; font-size:9pt; color:#555;">Timbalan Pengarah (Akademik), KKBDA</span>
+          <label>Tandatangan &amp; Tarikh:</label>
+          <span class="rpt-sign-line"></span>
+        </div>
+        <div class="rpt-sign-stamp">[ Cop Rasmi / Official Stamp ]</div>
+      </div>
+
+    </div>
+
+    <div style="margin-top:20px; font-size:9pt; color:#444; border:1px solid #d1d5db; padding:10px 14px;">
+      <strong>Perakuan:</strong> Kami yang menandatangani di atas dengan ini mengesahkan bahawa data pencapaian PLO yang terkandung dalam laporan ini telah disemak, dibincangkan dalam mesyuarat akademik program, dan diluluskan untuk tujuan dokumentasi dan pelaporan akreditasi MBOT.
+    </div>
+  </div>
+
+  <div class="rpt-footer-note">
+    Laporan PLORR — Program Sijil Teknologi Maklumat (STM), KKBDA &nbsp;|&nbsp; Dijana melalui Dashboard PLORR &nbsp;|&nbsp; ${tarikh}
+    <br>Dokumen ini adalah dokumen rasmi program. Simpan dalam fail portfolio program untuk semakan MBOT.
+  </div>`;
+
+  document.getElementById('rpt-body-content').innerHTML = html;
+  document.getElementById('print-report').classList.add('visible');
+}
+
+function tutupLaporan() {
+  document.getElementById('print-report').classList.remove('visible');
+}
+
+// ═══════════════════════════════════════════════════
+// TAB SWITCHING
+// ═══════════════════════════════════════════════════
+function switchTab(id, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  if (btn) btn.classList.add('active');
+
+  if (id === 'kohort')  renderKohort();
+  if (id === 'kelas')   renderKelas();
+  if (id === 'pelajar') { filterPelajar(); }
+  if (id === 'sahkan')  renderSahkan();
+  if (id === 'cqi')     renderCQI();
+}
+
+// ═══════════════════════════════════════════════════
+// PRESENTATION MODE
+// ═══════════════════════════════════════════════════
+function showPresent()    { document.getElementById('present-overlay').classList.add('visible'); }
+function closePresent()   { document.getElementById('present-overlay').classList.remove('visible'); }
+function activatePresent() {
+  presentMode = true;
+  closePresent();
+  // Hide individual student tab
+  document.querySelectorAll('.tab-btn').forEach(b => {
+    if (b.textContent.trim().startsWith('Paparan Pelajar')) {
+      b.style.display = 'none';
+    }
+  });
+  // Re-render current page
+  const active = document.querySelector('.page.active');
+  if (active?.id === 'page-pelajar') {
+    const btn = document.querySelector('.tab-btn');
+    switchTab('kohort', btn);
+  } else renderKohort();
+
+  // Show banner
+  document.querySelector('header .header-right').insertAdjacentHTML('afterbegin',
+    '<span class="header-badge" style="background:#dc2626;border-color:rgba(255,100,100,0.5);">Mode Pembentangan Aktif</span>');
+}
+
+// ═══════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  initKelasPLOFilter();
+  renderKohort();
+  filterPelajar();
+});
+
+window.addEventListener('resize', () => {
+  echarts.getInstanceByDom(document.getElementById('chart-kohort-bar'))?.resize();
+  echarts.getInstanceByDom(document.getElementById('chart-kelas-bar'))?.resize();
+  if (radarChart) radarChart.resize();
+});
+</script>
+</body>
+</html>
